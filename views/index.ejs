@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bootstrap demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <style>
+    #baby {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="main w-full h-screen bg-slate-300 flex">
+    <div class="left w-[27%] h-full bg-slate-200 p-2">
+      <div class="left-top w-full h-[70px] bg-green-400 p-3 flex justify-between items-center rounded ">
+        <div class="user flex items-center justify-spacebetween">
+          <form id="imgform" hidden action="/profile" method="post" enctype="multipart/form-data">
+            <input id="imgdalo" type="file" name="avatar" />
+          </form>
+          <div class="imgdiv h-[60px] w-[60px] bg-red-300 rounded-full relative">
+            <img class="rounded-full w-full h-full object-cover" src="<%=logedUser.img%>" alt="">
+            <i class="ri-pencil-fill absolute bg-black px-[8px] py-[5px] rounded-full text-xs top-[50%] right-[-20%] text-white " id="raju"></i>
+          </div>
+          <h1 class="ml-4 font-bold">
+            <%=logedUser.username%>
+          </h1>
+        </div>
+        <button class="h-full">
+          <i onclick="addGroup()"
+            class="ri-user-add-line bg-green-600 px-2 py-1 rounded-full text-white font-bold"></i>
+          <i onclick="createGroup()" class="ri-group-line bg-green-600 px-2 py-1 rounded-full text-white font-bold"></i>
+        </button>
+      </div>
+
+      <!-- 
+          ye part hai online user ke liye
+        -->
+      <div class="onlineusers w-full max-h-max mt-2">
+        <!-- <div id="baby" onclick="setCurrentChat('${img}','${username}','${chatId}')" class="onlineuser w-full h-[60px] bg-white flex items-center p-3">
+          <div class="imgdiv h-[60px] w-[60px] bg-red-300 rounded-full">
+            <img src="" alt="">
+          </div>
+          <div class="msgs ml-5">
+            <h1 class="font-bold">Online Username</h1>
+            <h1>msg</h1>
+          </div>
+        </div> -->
+
+      </div>
+    </div>
+    <div class="right w-[73%] h-full relative">
+      <div class="interface w-full h-full bg-slate-100 flex flex-col items-center justify-center">
+        <img class="w-[200px] h-[200px]" src="https://cdn-icons-png.flaticon.com/256/174/174879.png" alt="">
+        <h1 class="font-bold my-2 text-slate-400">WhatsApp for Windows</h1>
+        <p class="text-center leading-5 text-slate-500"> Send and receive message without keeping you phone online
+          <br>Use Whatsapp on up to 4 linked devide and 1 phone at the same time
+        </p>
+      </div>
+
+      <div id="baby" class="chatdiv w-full h-full absolute top-0 py-2 pr-2">
+        <div class="top w-full h-[70px] bg-green-400 flex items-center rounded">
+          <div class="imgdiv h-[60px] w-[60px] bg-red-300 rounded-full ml-3">
+            <img class="chatuser rounded-full" src="" alt="">
+          </div>
+          <h1 class="chatusername ml-4 font-bold text-white"></h1>
+        </div>
+        <!-- <div class="chatarea w-full h-[81%] bg-red-200 px-2 py-1 flex items-start flex-col gap-1 overflow-auto scrol-auto">
+
+          <div class="putOutgoingmsg px-3 py-2 bg-slate-200 rounded ml-auto">
+            outgoing message
+          </div>
+          <div class="putIncommingmsg px-3 py-2 bg-slate-200 rounded ">
+            incomming message
+          </div>
+        </div> -->
+        <div class="chatsectio w-full h-[81%] bg-red-400 relative">
+          <img class="w-full h-full object-cover" src="https://w0.peakpx.com/wallpaper/818/148/HD-wallpaper-whatsapp-background-cool-dark-green-new-theme-whatsapp.jpg" alt="">
+          <div class="chatarea w-full h-full absolute top-0 px-2 py-1 flex items-start flex-col gap-1 overflow-auto scrol-auto"></div>
+
+        </div>
+        <div class="inputarea flex w-full h-[9%] bg-green-600">
+          <input id="inputValue" type="text" class="w-[85%] pl-5">
+          <button id="btn" onclick="putOutgoingmsg()" class="m-auto font-bold text-white">Send Message</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+    crossorigin="anonymous"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+
+
+  <script>
+
+    var currentChatUserId = null
+
+    const loggedinChatUserId = "<%=logedUser.username%>";
+
+
+    var socket = io();
+
+    socket.emit("newUserJoied", "<%=logedUser.username%>")
+
+
+    socket.on("newUserJoined", msg => {
+      onlineUser(msg.img, msg.username)
+    })
+
+    socket.on("receive-private-message", msg => {
+      putIncommingMsg(msg)
+    })
+    
+
+    socket.on("group-message" ,msg=>{
+      putIncommingMsg(msg)
+    })
+
+    function onlineUser(img, username) {
+      if (!document.querySelector(`${username}`)) {
+        const template = `
+        <div id="${username}" onclick="setCurrentChat('${img}','${username}')" class="onlineuser w-full h-[70px] bg-white flex items-center rounded">
+          <div class="imgdiv h-[60px] w-[60px] bg-red-300 rounded-full">
+            <img src="${img}" alt="">
+          </div>
+          <div class="msgs ml-5">
+            <h1 class="font-bold">${username}</h1>
+          </div>
+        </div>
+        `
+
+        document.querySelector(".onlineusers").innerHTML += template
+      }
+    }
+
+    function setCurrentChat(img, username) {
+      document.querySelector("#baby").style.display = "initial"
+      document.querySelector(".chatuser").setAttribute("src", img)
+      document.querySelector(".chatusername").textContent = username
+      currentChatUserId = username
+
+      socket.emit("getprivatemsg", {
+        sender: loggedinChatUserId,
+        reciver: currentChatUserId
+      })
+    }
+
+    function putOutgoingmsg() {
+      var msgValue = document.querySelector("#inputValue").value
+      var template = `
+        <div class="putOutgoingmsg px-3 py-2 bg-slate-200 rounded ml-auto">
+          ${msgValue}
+        </div>`
+
+      document.querySelector(".chatarea").innerHTML += template
+      document.querySelector("#inputValue").value = " "
+
+
+      const msgInfo = {
+        msg: msgValue,
+        sender: loggedinChatUserId,
+        reciver: currentChatUserId
+      }
+      // console.log(msgInfo);
+      socket.emit("privateMsg", msgInfo)
+
+    }
+
+    function puttingmsg(msg) {
+      var template = `
+        <div class="putOutgoingmsg px-3 py-2 bg-slate-200 rounded ml-auto">
+          ${msg} 
+        </div>`
+
+      document.querySelector(".chatarea").innerHTML += template
+    }
+
+
+
+    function putIncommingMsg(msg) {
+
+      var template = `
+      <div class="putIncommingmsg px-3 py-2 bg-slate-200 rounded ">
+          ${msg}
+        </div>
+      `
+      document.querySelector(".chatarea").innerHTML += template
+    }
+
+    function createGroup(){
+      var groupName = prompt("Create new group")
+
+      socket.emit("create-Group", {
+        gpname:groupName,
+        sender:loggedinChatUserId
+      })
+    }
+
+    socket.on("show-group", newGroup=>{
+      onlineUser(newGroup.profile, newGroup.name)
+    })
+
+   
+    function  addGroup(){
+     const gpname = prompt("add in new group")
+     socket.emit("join-group", {
+      gpname:gpname,
+      sender:loggedinChatUserId
+     })
+    }
+    socket.on("group-joined", newGroup=>{
+      // console.log(newGroup);
+      onlineUser(newGroup.profile, newGroup.name)
+    })
+
+    
+
+    socket.on("onlychat",allmessage=>{
+      document.querySelector(".chatarea").innerHTML = ""
+      allmessage.forEach(msg=>{
+        if(loggedinChatUserId == msg.sender){
+          puttingmsg(msg.msg)
+        }else{
+          putIncommingMsg(msg.msg)
+        }
+      })
+    } )
+
+    socket.on("allchats", allmessage => {
+      document.querySelector(".chatarea").innerHTML = ""
+
+      allmessage.forEach(singlemsg => {
+        if (loggedinChatUserId == singlemsg.sender) {
+          puttingmsg(singlemsg.msg)
+        } else {
+          
+          putIncommingMsg(singlemsg.msg)
+        }
+      })
+    })
+
+
+    document.querySelector("#raju").addEventListener("click", function(){
+      document.querySelector("#imgdalo").click();
+    })
+
+    document.querySelector("#imgdalo").addEventListener("change", function(){
+      document.querySelector("#imgform").submit()
+    })
+  </script>
+</body>
+
+</html>
